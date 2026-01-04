@@ -283,9 +283,87 @@ echo ".mcp/project-server/dist/" >> .gitignore
 
 ---
 
-## Phase 6: Validation
+## Phase 6: Document MCP Tools in CLAUDE.md
 
-### Step 6.1: Test MCP Server
+### Step 6.1: Update CLAUDE.md with MCP Tools
+
+Add or update the MCP tools section in `CLAUDE.md`:
+
+```markdown
+## Available MCP Tools
+
+This project has a configured MCP server providing the following tools for testing and automation.
+
+### Process Management
+
+| Tool | Description | Example |
+|------|-------------|---------|
+| `start_service` | Start a configured service | `start_service backend` |
+| `stop_service` | Stop a running service | `stop_service frontend` |
+| `stop_all` | Stop all running services | `stop_all` |
+| `services_status` | Get status of all services | `services_status` |
+| `service_logs` | Get logs from a service | `service_logs backend 50` |
+| `health_check` | Check if service is healthy | `health_check backend` |
+
+### Browser Testing (Playwright)
+
+| Tool | Description | Example |
+|------|-------------|---------|
+| `browser_open` | Open URL in browser | `browser_open /login` |
+| `browser_click` | Click element | `browser_click button[type=submit]` |
+| `browser_fill` | Fill input field | `browser_fill #email test@test.com` |
+| `browser_wait_for` | Wait for element | `browser_wait_for .dashboard` |
+| `browser_url` | Get current URL | `browser_url` |
+| `browser_exists` | Check element exists | `browser_exists .error-message` |
+| `browser_screenshot` | Take screenshot | `browser_screenshot failure.png` |
+| `browser_close` | Close browser | `browser_close` |
+
+### API Testing
+
+| Tool | Description | Example |
+|------|-------------|---------|
+| `api_get` | GET request | `api_get /api/users` |
+| `api_post` | POST request | `api_post /api/auth/login {"email":"..."}` |
+| `api_put` | PUT request | `api_put /api/users/1 {"name":"..."}` |
+| `api_delete` | DELETE request | `api_delete /api/users/1` |
+| `api_test` | Run API test suite | `api_test /api/auth` |
+
+### Docker Management
+
+| Tool | Description | Example |
+|------|-------------|---------|
+| `start_docker` | Start Docker Compose | `start_docker` |
+| `stop_docker` | Stop Docker Compose | `stop_docker` |
+| `docker_logs` | Get container logs | `docker_logs db 30` |
+
+### Configured Services
+
+{{SERVICES_LIST}}
+
+### Usage in /speckit.validate
+
+The `/speckit.validate` command uses these MCP tools automatically to:
+1. Start services with `start_service`
+2. Run health checks with `health_check`
+3. Execute browser tests with `browser_*` tools
+4. Execute API tests with `api_*` tools
+5. Collect logs on failures with `service_logs`
+6. Clean up with `stop_all`
+
+See the validation command for automated testing workflows.
+```
+
+Replace `{{SERVICES_LIST}}` with the actual configured services.
+
+### Step 6.2: Verify CLAUDE.md Update
+
+Ensure the MCP tools section is added/updated and properly formatted.
+
+---
+
+## Phase 7: Validation
+
+### Step 7.1: Test MCP Server
 
 ```bash
 cd .mcp/project-server && npm run inspect
@@ -296,7 +374,7 @@ Verify all tools are listed:
 - Browser tools: `browser_open`, `browser_click`, etc.
 - API tools: `api_get`, `api_post`, etc.
 
-### Step 6.2: Test Service Start
+### Step 7.2: Test Service Start
 
 Quick validation:
 

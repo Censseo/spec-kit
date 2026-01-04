@@ -105,22 +105,55 @@ Based on completed tasks:
 
 ## Phase 2: Environment Setup
 
-### Step 2.1: Start Infrastructure
+### Step 2.1: Check MCP Tools Availability
 
-Using MCP tools (or bash fallback):
+**REQUIRED**: Check if MCP tools are available by looking for them in CLAUDE.md:
+
+```markdown
+If MCP tools documented in CLAUDE.md:
+  → Use MCP tools (preferred - automated, reliable)
+Else:
+  → Use bash fallback (manual, requires tmux)
+  → Recommend running /speckit.mcp first
+```
+
+### Step 2.2: Start Infrastructure
+
+**Using MCP Tools** (preferred):
 
 ```
-1. start_docker          → Start DB, Redis, etc.
-2. Wait for containers   → health_check on each
-3. start_service backend → Start backend service
-4. Wait for backend      → health_check backend
-5. start_service frontend → Start frontend
-6. Wait for frontend     → health_check frontend
+# Start Docker services
+start_docker
+
+# Wait for containers to be ready
+health_check db
+health_check redis
+
+# Start application services
+start_service backend
+health_check backend
+
+start_service frontend
+health_check frontend
 ```
 
-**Important**: Wait for each service to be healthy before proceeding.
+**Using Bash Fallback** (if no MCP):
 
-### Step 2.2: Verify Environment
+```bash
+# Start services in tmux sessions
+tmux new-session -d -s backend 'cd backend && ./mvnw spring-boot:run'
+tmux new-session -d -s frontend 'cd frontend && npm run dev'
+
+# Wait for services (manual polling)
+while ! curl -s http://localhost:8080/health > /dev/null; do sleep 1; done
+```
+
+**Important**:
+- MCP tools include automatic retries and better error handling
+- Without MCP, you'll need to manually check service status
+- For browser tests, MCP is REQUIRED (Playwright integration)
+
+### Step 2.3: Verify Environment
 
 Run health checks on all services:
 
@@ -140,7 +173,7 @@ If any service fails:
 2. Report the error
 3. Ask user how to proceed
 
-### Step 2.3: Seed Test Data (if needed)
+### Step 2.4: Seed Test Data (if needed)
 
 If `quickstart.md` specifies seed data:
 
@@ -179,46 +212,81 @@ Process stories in order: P1 → P2 → P3
 
 ### Step 3.2: Execute Scenario Steps
 
-For each scenario, translate Gherkin to MCP actions:
+For each scenario, translate Gherkin to MCP tool calls (consult CLAUDE.md for available tools):
 
 **Given** (Setup):
+
+**With MCP tools**:
 ```
-# Create test data if needed
+# Create test data using MCP API tools
 api_post /api/test/users {"email": "test@example.com", "password": "secret"}
 ```
 
-**When** (Actions):
+**Without MCP**:
+```bash
+curl -X POST http://localhost:8080/api/test/users -d '{"email":"test@example.com"}'
 ```
-# UI Actions
+
+**When** (Actions):
+
+**With MCP tools - UI Actions**:
+```
+# Use MCP browser tools (see CLAUDE.md for full list)
 browser_open /login
 browser_fill #email test@example.com
 browser_fill #password secret
 browser_click button[type=submit]
+```
 
-# Or API Actions
+**With MCP tools - API Actions**:
+```
+# Use MCP API tools
 api_post /api/auth/login {"email": "test@example.com", "password": "secret"}
 ```
 
-**Then** (Assertions):
+**Without MCP - API Actions only**:
+```bash
+# Browser testing NOT SUPPORTED without MCP
+curl -X POST http://localhost:8080/api/auth/login -d '{"email":"test@example.com"}'
 ```
-# UI Assertions
+
+**Then** (Assertions):
+
+**With MCP tools - UI**:
+```
+# Use MCP browser tools for assertions
 browser_wait_for .dashboard
 browser_url → should contain "/dashboard"
 browser_exists .welcome-message → should be true
+```
 
-# API Assertions
+**With MCP tools - API**:
+```
+# Check response from MCP tool return value
 → status should be 200
 → body should contain { "token": "..." }
 ```
 
+**Without MCP**:
+```bash
+# Manual parsing of curl output
+# Limited assertions available
+```
+
 ### Step 3.3: Capture Evidence
 
-For each scenario:
+For each scenario, use MCP tools to collect evidence (or fallback methods):
 
-1. **Screenshot** on success: `browser_screenshot`
-2. **Screenshot** on failure: `browser_screenshot`
-3. **API Response**: Log response body
-4. **Logs on failure**: `service_logs backend 20 "ERROR"`
+**With MCP tools**:
+1. **Screenshot on success**: `browser_screenshot validation/screenshots/us1-success.png`
+2. **Screenshot on failure**: `browser_screenshot validation/screenshots/us1-fail.png`
+3. **API Response**: Automatically captured from `api_*` tool return values
+4. **Logs on failure**: `service_logs backend 20 "ERROR"` or `service_logs backend 50`
+
+**Without MCP**:
+1. **Screenshots**: NOT AVAILABLE (manual screenshots only)
+2. **API Response**: Parse curl output manually
+3. **Logs**: `tail -n 20 backend/logs/app.log`
 
 ### Step 3.4: Handle Failures
 
@@ -367,10 +435,21 @@ If failures found, update `tasks.md` with correction tasks (using smart insertio
 
 ### Step 5.1: Stop Services
 
+**With MCP tools**:
 ```
 stop_all          → Stop all application services
 stop_docker       → Stop Docker containers
 browser_close     → Close browser
+```
+
+**Without MCP**:
+```bash
+# Kill tmux sessions
+tmux kill-session -t backend
+tmux kill-session -t frontend
+
+# Stop Docker
+docker compose down
 ```
 
 ### Step 5.2: Reset Test Data (optional)
